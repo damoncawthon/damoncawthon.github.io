@@ -29,6 +29,10 @@ section .data
     dot_msg db ".", 10, 0
 
 section .bss
+    SYS_read equ 0
+    SYS_write equ 1
+    STDIN equ 0
+    STDOUT equ 1
     input_buffer resb 100
     result_buffer resb 100
     emf_value resq 1
@@ -127,24 +131,30 @@ _start:
     movsd [resistance_value], xmm0
 
     ; Convert resistance to string
-    mov rdi, resistance_value
-    mov rsi, result_buffer
-    mov rdx, 100
-    call ftoa
+    movsd xmm0, [resistance_value]  ; Move the resistance value to xmm0
+    mov rsi, r11         ; Address of output buffer
+    mov rdx, 100                    ; Buffer size
+    call ftoa                       ; Call ftoa with xmm0 input
 
-    ; Display result message
+    ; Debug prints
     STRLEN r9, result_msg
-    mov rax, 1          ; sys_write
-    mov rdi, 1          ; stdout
-    mov rsi, result_msg
-    mov rdx, r9
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, result_msg        ; "The resistance in this circuit is "
+    mov rdx, r9                ; Message length
     syscall
 
-    ; Display resistance value
-    mov rax, 1          ; sys_write
-    mov rdi, 1          ; stdout
-    mov rsi, result_buffer
-    mov rdx, 100
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, r11     ; Converted resistance
+    mov rdx, 20                ; Reasonable buffer size
+    syscall
+
+    ; Newline
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, dot_msg           ; ".\n"
+    mov rdx, 2
     syscall
 
     ; Exit program
